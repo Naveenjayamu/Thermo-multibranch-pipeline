@@ -1,26 +1,76 @@
-pipeline { 
-  
-   agent any
-
-   stages {
-   
-     stage('Install Dependencies') { 
-        steps { 
-           sh 'npm install' 
+pipeline{
+    
+    agent any 
+    
+    stages {
+        
+        stage('Git Checkout'){
+            
+            steps{
+                
+                script{
+                    
+                    git branch: 'main', url: 'https://github.com/vikash-kumar01/mrdevops_javaapplication.git'
+                }
+            }
         }
-     }
-     
-     stage('Test') { 
-        steps { 
-           sh 'echo "testing application..."'
+        stage('UNIT testing'){
+            
+            steps{
+                
+                script{
+                    
+                    sh 'mvn test'
+                }
+            }
         }
-      }
-
-         stage("Deploy nodejs application") { 
-         steps { 
-           sh 'echo "deploying application..."'
-         }
-
+        stage('Integration testing'){
+            
+            steps{
+                
+                script{
+                    
+                    sh 'mvn verify -DskipUnitTests'
+                }
+            }
+        }
+        stage('Maven build'){
+            
+            steps{
+                
+                script{
+                    
+                    sh 'mvn clean install'
+                }
+            }
+        }
+        stage('Static code analysis'){
+            
+            steps{
+                
+                script{
+                    
+                    withSonarQubeEnv(credentialsId: 'sonar-api') {
+                        
+                        sh 'mvn clean package sonar:sonar'
+                    }
+                   }
+                    
+                }
+            }
+            stage('Quality Gate Status'){
+                
+                steps{
+                    
+                    script{
+                        
+                        waitForQualityGate abortPipeline: false, credentialsId: 'sonar-api'
+                    }
+                }
+            }
+        }
+        
+}
      }
   
    	}
